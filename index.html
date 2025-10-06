@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Image Analysis Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-1:#05060a; --bg-2:#0c0f14; --card:#0d1116; --muted:#9fb2cc;
+  --gold-1:#ffd166; --gold-2:#ffb703;
+  --accent-grad: linear-gradient(135deg,var(--gold-1),var(--gold-2));
+  --radius-lg:16px; --radius-md:10px;
+  --max-width:1100px; --gap:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:#e9f3ff;
+padding:28px;line-height:1.35;}
+.wrap{max-width:var(--max-width);margin:0 auto;}
+header{display:flex;justify-content:space-between;align-items:center;gap: var(--gap);margin-bottom:24px;flex-wrap:wrap;}
+.brand h1{margin:0;font-size:24px;color:var(--gold-1);letter-spacing:0.4px;}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.btn{border:0;padding:10px 18px;border-radius:12px;font-weight:700;cursor:pointer;background:var(--accent-grad);
+color:#071018;transition:.15s ease-out;}
+.btn.secondary{background:transparent;color:var(--gold-1);border:1px solid rgba(255,183,3,0.1);font-weight:600;}
+.btn:active{transform:translateY(1px);}
+#spinner{width:30px;height:30px;border-radius:50%;border:4px solid rgba(255,255,255,0.08);border-top:4px solid var(--gold-1);display:none;animation:spin 0.8s linear infinite;}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+#preview{display:flex;gap:14px;overflow-x:auto;padding:10px 6px;margin-bottom:20px}
+.thumb{width:160px;height:160px;border-radius:var(--radius-md);background:var(--card);overflow:hidden;position:relative;flex-shrink:0;border:1px solid rgba(255,255,255,0.05);}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .remove{position:absolute;left:8px;top:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;}
+.thumb .name{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 8px;border-radius:8px;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.55));font-size:12px;color:#fff;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;}
+#winnerSpotlight{display:none;margin-top:20px;background:linear-gradient(180deg, var(--card), var(--bg-2));border-radius:var(--radius-lg);padding:24px;border:1px solid rgba(255,183,3,0.1);animation:fadeScale .6s ease;}
+.winner-title{color:var(--gold-1);font-size:22px;margin-top:0;margin-bottom:15px;font-weight:700;}
+.winner-top{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}
+.winner-card{width:300px;height:300px;border-radius:16px;overflow:hidden;border:5px solid rgba(255,200,60,0.1);background:#0b0f14;}
+.winner-card img{width:100%;height:100%;object-fit:cover;}
+.winner-meta{flex:1;min-width:300px}
+.winner-meta h2{margin:0;color:#fff;font-size:20px;margin-bottom:10px;}
+.score-pill{display:inline-block;padding:8px 14px;border-radius:10px;background:var(--accent-grad);font-weight:800;color:var(--bg-1);font-size:18px;}
+.winner-reason-heading{margin-top:15px;font-weight:600;color:var(--gold-1);font-size:14px;text-transform:uppercase;}
+.winner-reason{margin-top:8px;background:rgba(255,255,255,0.03);padding:15px;border-radius:10px;font-size:14px;color:#dbe9ff;line-height:1.5;}
+@keyframes fadeScale{0%{opacity:0;transform:scale(0.98)}100%{opacity:1;transform:scale(1)}}
+.rings{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap}
+.ring-card{width:110px;height:110px;border-radius:var(--radius-md);background:rgba(255,255,255,0.05);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;border:1px solid rgba(255,255,255,0.05);}
+.ring-label{font-size:12px;color:var(--muted);margin-top:6px}
+.ring-value{font-weight:800;color:#fff;font-size:18px}
+#resultsTable{margin-top:40px;display:none}
+#resultsTable h2{color:var(--gold-1);font-size:22px;margin-bottom:15px;}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.05);}
+table{width:100%;border-collapse:collapse;background:transparent;}
+th,td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:center;font-size:14px;color:#d7e6ff}
+th{background:linear-gradient(180deg,#071427,#0c1d33);color:var(--gold-1);font-weight:700;position:sticky;top:0}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.reason{max-width:300px;text-align:left;color:#bcd3ff;line-height:1.4}
+.thumb-in-table{width:80px;height:80px;object-fit:cover;border-radius:8px;} /* Updated size */
+tr.winner-row td{background:rgba(255,200,60,0.1);color:#fff!important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Image Analyzer</h1>
+      <p>✨Upload 5 images and let our Smart Analyzer find the ultimate winner! 🏆</p>
+    </div>
+    <div class="controls" role="toolbar" aria-label="Actions">
+      <label class="btn" for="fileInput" style="cursor:pointer">📤 Upload Images</label>
+      <input id="fileInput" type="file" accept="image/*" multiple style="display:none" aria-hidden="true">
+      <button id="analyzeBtn" class="btn" aria-label="Analyze images">🔍 Analyze</button>
+      <button id="refreshBtn" class="btn secondary">🔄 Refresh</button>
+      <div id="spinner" aria-hidden="true"></div>
+    </div>
+  </header>
+
+  <div id="preview" aria-live="polite" aria-atomic="true"></div>
+  <section id="winnerSpotlight" aria-live="polite" aria-atomic="true"></section>
+  <section id="resultsTable" aria-label="Full analysis report"></section>
+</div>
+
+<script>
+const CLOUD_NAME = 'dg6zcxi1g';
+const UPLOAD_PRESET = 'unsigned_preset';
+const N8N_WEBHOOK = 'https://techsurge.app.n8n.cloud/webhook/smart-image-analyzer';
+
+const fileInput=document.getElementById('fileInput');
+const preview=document.getElementById('preview');
+const analyzeBtn=document.getElementById('analyzeBtn');
+const spinner=document.getElementById('spinner');
+const winnerSpotlight=document.getElementById('winnerSpotlight');
+const resultsTable=document.getElementById('resultsTable');
+const refreshBtn=document.getElementById('refreshBtn');
+let selectedFiles=[];
+
+function escapeHTML(str){ if(!str) return ''; return str.replace(/[&<>'"]/g,t=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t])); }
+
+fileInput.addEventListener('change',e=>{
+  const added=Array.from(e.target.files||[]);
+  selectedFiles=selectedFiles.concat(added).slice(0,5); 
+  renderPreview();
+});
+
+refreshBtn.addEventListener('click',()=>{
+  selectedFiles=[]; preview.innerHTML=''; winnerSpotlight.style.display='none'; resultsTable.style.display='none'; fileInput.value='';
+});
+
+analyzeBtn.addEventListener('click',async ()=>{
+  if(selectedFiles.length < 2){ alert('Please upload at least 2 images for comparison.'); return; }
+  
+  analyzeBtn.disabled = true; refreshBtn.disabled = true;
+  spinner.style.display='inline-block';
+  winnerSpotlight.style.display='none'; resultsTable.style.display='none';
+
+  try {
+    const uploadPromises = selectedFiles.map(file=>uploadToCloudinary(file));
+    const uploadedUrls = await Promise.all(uploadPromises);
+    const imagesForN8N = selectedFiles.map((file, idx) => ({ name: file.name, url: uploadedUrls[idx] })).filter(img => img.url); 
+    if (!imagesForN8N.length) throw new Error('All images failed to upload to Cloudinary.');
+
+    const analysisResponse = await sendToN8N(imagesForN8N);
+    if (!analysisResponse.all_images || !analysisResponse.winner) throw new Error('Missing "all_images" or "winner" in n8n response.');
+    renderResults(analysisResponse.all_images, analysisResponse.winner, imagesForN8N);
+
+  } catch (e) {
+    console.error('Analysis failed:', e.message || e);
+    alert('Analysis failed: ' + (e.message || 'Check console for details.'));
+  } finally {
+    analyzeBtn.disabled = false; refreshBtn.disabled = false;
+    spinner.style.display='none';
+  }
+});
+
+function renderPreview(){
+  preview.innerHTML='';
+  selectedFiles.forEach((f,idx)=>{
+    const d=document.createElement('div'); d.className='thumb';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); img.alt=f.name;
+    const rem=document.createElement('button'); rem.className='remove'; rem.innerText='✕';
+    rem.onclick=()=>{ URL.revokeObjectURL(img.src); selectedFiles.splice(idx,1); renderPreview(); winnerSpotlight.style.display='none'; resultsTable.style.display='none'; };
+    const name=document.createElement('div'); name.className='name'; name.innerText=f.name;
+    d.appendChild(img); d.appendChild(rem); d.appendChild(name); preview.appendChild(d);
+  });
+}
+
+function uploadToCloudinary(file){
+  const formData=new FormData();
+  formData.append('file',file);
+  formData.append('upload_preset',UPLOAD_PRESET);
+  return fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,{method:'POST',body:formData})
+    .then(res=>res.ok?res.json():Promise.reject(`Cloudinary upload failed: ${res.statusText}`))
+    .then(data=>data.secure_url)
+    .catch(e=>{ console.error('Cloudinary upload error:', e); return ''; });
+}
+
+async function sendToN8N(images){
+    const controller = new AbortController();
+    const timeoutDuration = 40000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration); 
+    try {
+        const response = await fetch(N8N_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ images: images }), signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (response.status === 204) throw new Error('n8n returned 204 No Content.');
+        if (!response.ok) throw new Error(`n8n webhook failed with status: ${response.status}.`);
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) return data[0]; 
+        throw new Error('Invalid response structure from n8n.');
+    } catch (error) {
+        if (error.name === 'AbortError') throw new Error(`n8n analysis timed out (Took longer than ${timeoutDuration / 1000} seconds).`);
+        throw error;
+    } finally { clearTimeout(timeoutId); }
+}
+
+function renderResults(allResults, winner, uploadedImages){
+  const winnerImage = uploadedImages.find(img => img.name === winner.name);
+  const winnerUrl = winnerImage?.url || ''; 
+  const finalScoreDisplay = winner.final_score ? winner.final_score.toFixed(2) : 'N/A';
+  
+  winnerSpotlight.innerHTML=`<h2 class="winner-title">🏆 Winning Image: ${escapeHTML(winner.name)}</h2>
+  <div class="winner-top" role="group" aria-label="Winner Details">
+    <div class="winner-card"><img src="${winnerUrl}" alt="${escapeHTML(winner.name)}"></div>
+    <div class="winner-meta">
+      <div class="score-pill">Final Score: ${finalScoreDisplay}/100</div>
+      <div class="rings">
+        <div class="ring-card"><div class="ring-value">${winner.scores?.technical_quality || 'N/A'}</div><div class="ring-label">Technical</div></div>
+        <div class="ring-card"><div class="ring-value">${winner.scores?.aesthetic_quality || 'N/A'}</div><div class="ring-label">Aesthetic</div></div>
+        <div class="ring-card"><div class="ring-value">${winner.scores?.brand_consistency || 'N/A'}</div><div class="ring-label">Brand</div></div>
+        <div class="ring-card"><div class="ring-value">${winner.scores?.creativity || 'N/A'}</div><div class="ring-label">Creativity</div></div>
+      </div>
+      <div class="winner-reason-heading">Reason for Winning:</div>
+      <div class="winner-reason">${escapeHTML(winner.reason || 'N/A').split('.').filter(x=>x.trim()).map(x=>`<div>• ${x.trim()}.</div>`).join('')}</div>
+    </div>
+  </div>`;
+  winnerSpotlight.style.display='block';
+
+  let t=`<div class="table-wrap"><table><thead><tr>
+    <th>Image</th>
+    <th>Final Score</th>
+    <th>Technical Quality</th>
+    <th>Aesthetic Quality</th>
+    <th>Brand Consistency</th>
+    <th>Creativity</th>
+    <th>Reason</th>
+  </tr></thead><tbody>`;
+  
+  allResults.forEach((r)=>{
+    const isW=(r.name === winner.name);
+    const uploadedFile = uploadedImages.find(f => f.name === r.name);
+    const url = uploadedFile?.url || '';
+    t+=`<tr class="${isW ? 'winner-row' : ''}">
+      <td><img src="${url}" alt="${escapeHTML(r.name)}" class="thumb-in-table"></td>
+      <td>${r.final_score ? r.final_score.toFixed(2) : 'N/A'}</td>
+      <td>${r.scores?.technical_quality || 'N/A'}</td>
+      <td>${r.scores?.aesthetic_quality || 'N/A'}</td>
+      <td>${r.scores?.brand_consistency || 'N/A'}</td>
+      <td>${r.scores?.creativity || 'N/A'}</td>
+      <td class="reason">${escapeHTML(r.reason || 'N/A')}</td></tr>`;
+  });
+  t+='</tbody></table></div>';
+  
+  resultsTable.innerHTML=`<h2>📊 Analysis Report</h2>`+t;
+  resultsTable.style.display='block';
+}
+</script>
+</body>
+</html>
+
+
+
+
+
